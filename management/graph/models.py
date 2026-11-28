@@ -37,3 +37,5 @@ class GraphRun(models.Model):
         from .workflow import SERVICE_CONFIG
 
         return SERVICE_CONFIG.get(self.service_type, {}).get("label", self.service_type)
+
+    
