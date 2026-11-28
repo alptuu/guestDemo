@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Çalıştırma #{{ run.pk }}{% endblock %}
+{% block page_title %}Çalıştırma #{{ run.pk }}{% endblock %}
+{% block page_sub %}{{ run.service_label }} · {{ run.created_at|date:"d.m.Y H:i:s" }}{% endblock %}
+{% block actions %}<a class="btn" href="{% url 'graph:run_history' %}">Geçmişe dön</a>{% endblock %}
+
+{% block content %}
+{% include "graph/_run_card.html" with hide_link=True %}
+{% endblock %}

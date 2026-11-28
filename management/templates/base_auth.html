@@ -1,0 +1,32 @@
+{% load static %}<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Giriş{% endblock %} · Misafir Yönetimi</title>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body>
+<div class="auth">
+  <section class="auth-hero">
+    <div class="brand">
+      <span class="brand-mark">{% include "partials/_icon.html" with name="heart" %}</span>
+      <span><span class="brand-name">Misafir Yönetimi</span><br><span class="brand-sub">Hastane operasyon paneli</span></span>
+    </div>
+    <div>
+      <h2>Hasta taleplerini gerçek zamanlı izleyin, gecikmeleri erken yakalayın.</h2>
+      <p>Kafe, oda temizliği ve teknik servis talepleri ajan akışlarıyla değerlendirilir; eşik aşıldığında yöneticiler bilgilendirilir.</p>
+      <div class="auth-points">
+        <div>{% include "partials/_icon.html" with name="activity" %} Servis bazlı gecikme analizi</div>
+        <div>{% include "partials/_icon.html" with name="cpu" %} Adım adım izlenebilir LangGraph ajanları</div>
+        <div>{% include "partials/_icon.html" with name="shield" %} Rol tabanlı erişim</div>
+      </div>
+    </div>
+    <div class="small" style="color:#64748b">© Misafir Yönetimi</div>
+  </section>
+  <section class="auth-form-wrap">
+    <div class="auth-form">{% block content %}{% endblock %}</div>
+  </section>
+</div>
+</body>
+</html>

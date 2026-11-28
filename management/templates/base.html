@@ -1,0 +1,89 @@
+{% load static %}<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Panel{% endblock %} · Misafir Yönetimi</title>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+{% with view_name=request.resolver_match.view_name %}
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <a class="brand" href="{% url 'graph:dashboard' %}">
+      <span class="brand-mark">{% include "partials/_icon.html" with name="heart" %}</span>
+      <span>
+        <span class="brand-name">Misafir Yönetimi</span><br>
+        <span class="brand-sub">Hastane operasyon paneli</span>
+      </span>
+    </a>
+
+    <nav>
+      <div class="nav-label">Genel</div>
+      <a class="nav-link {% if view_name == 'graph:dashboard' %}active{% endif %}" href="{% url 'graph:dashboard' %}">
+        {% include "partials/_icon.html" with name="home" %} Genel Bakış
+      </a>
+
+      <div class="nav-label">Ajanlar</div>
+      <a class="nav-link {% if view_name == 'graph:runner' %}active{% endif %}" href="{% url 'graph:runner' %}">
+        {% include "partials/_icon.html" with name="play" %} Graph Çalıştır
+      </a>
+      <a class="nav-link {% if view_name == 'graph:run_history' or view_name == 'graph:run_detail' %}active{% endif %}" href="{% url 'graph:run_history' %}">
+        {% include "partials/_icon.html" with name="history" %} Çalıştırma Geçmişi
+      </a>
+
+      {% if is_panel_admin %}
+      <div class="nav-label">Yönetim</div>
+      <a class="nav-link {% if view_name == 'user:user_list' or view_name == 'user:user_create' or view_name == 'user:user_edit' or view_name == 'user:user_set_password' %}active{% endif %}" href="{% url 'user:user_list' %}">
+        {% include "partials/_icon.html" with name="users" %} Kullanıcılar
+      </a>
+      {% endif %}
+    </nav>
+
+    <div class="sidebar-foot">
+      <a class="user-chip" href="{% url 'user:profile' %}" title="Profilim">
+        <span class="avatar">{{ request.user.first_name|slice:":1"|default:request.user.username|slice:":1"|upper }}{{ request.user.last_name|slice:":1"|upper }}</span>
+        <span>
+          <span class="name">{{ request.user.get_full_name|default:request.user.username }}</span><br>
+          <span class="role">{% if is_panel_admin %}Yönetici{% else %}Personel{% endif %}</span>
+        </span>
+      </a>
+      <form method="post" action="{% url 'user:logout' %}" style="margin-top:8px">
+        {% csrf_token %}
+        <button class="nav-link" style="width:100%;background:none;border:0;cursor:pointer;font:inherit" type="submit">
+          {% include "partials/_icon.html" with name="logout" %} Çıkış yap
+        </button>
+      </form>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div style="display:flex;gap:12px;align-items:center">
+        <button class="btn sm menu-toggle" type="button" data-menu-toggle aria-label="Menü">{% include "partials/_icon.html" with name="menu" %}</button>
+        <div>
+          <h1 class="page-title">{% block page_title %}{% endblock %}</h1>
+          <p class="page-sub">{% block page_sub %}{% endblock %}</p>
+        </div>
+      </div>
+      <div class="topbar-actions">{% block actions %}{% endblock %}</div>
+    </header>
+
+    <main class="content">
+      {% if messages %}
+      <div class="messages">
+        {% for message in messages %}
+        <div class="message {{ message.tags }}"><span>{{ message }}</span><button type="button" aria-label="Kapat">&times;</button></div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+{% endwith %}
+<script src="{% static 'js/app.js' %}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

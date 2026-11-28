@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% load l10n %}
+{% block title %}Genel Bakış{% endblock %}
+{% block page_title %}Genel Bakış{% endblock %}
+{% block page_sub %}Mock veri seti üzerinden hastane ve servis bazlı talep özeti{% endblock %}
+{% block actions %}
+<a class="btn primary" href="{% url 'graph:runner' %}">{% include "partials/_icon.html" with name="play" %} Graph çalıştır</a>
+{% endblock %}
+
+{% block content %}
+<div class="grid cols-4">
+  <div class="card kpi">
+    <div class="kpi-icon">{% include "partials/_icon.html" with name="activity" %}</div>
+    <div><div class="kpi-label">Toplam talep</div><div class="kpi-value">{{ stats.total_requests }}</div><div class="kpi-note">{{ stats.hospital_count }} hastane</div></div>
+  </div>
+  <div class="card kpi">
+    <div class="kpi-icon red">{% include "partials/_icon.html" with name="clock" %}</div>
+    <div><div class="kpi-label">Geciken talep</div><div class="kpi-value">{{ stats.late_requests }}</div><div class="kpi-note">Toplamın %{{ stats.late_pct }}’i</div></div>
+  </div>
+  <div class="card kpi">
+    <div class="kpi-icon green">{% include "partials/_icon.html" with name="building" %}</div>
+    <div><div class="kpi-label">Yatan hasta</div><div class="kpi-value">{{ stats.patient_count }}</div><div class="kpi-note">{{ stats.hospital_count }} hastanede</div></div>
+  </div>
+  <div class="card kpi">
+    <div class="kpi-icon amber">{% include "partials/_icon.html" with name="heart" %}</div>
+    <div><div class="kpi-label">Diyabetik hasta</div><div class="kpi-value">{{ stats.diabetic_count }}</div><div class="kpi-note">Öncelikli takip</div></div>
+  </div>
+</div>
+
+<div class="grid split">
+  <div class="card">
+    <div class="card-head"><h2>Servis bazlı gecikme oranı</h2><span class="muted small">Dikey çizgi: gecikme eşiği</span></div>
+    <div class="card-body flush">
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Servis</th><th class="right">Talep</th><th class="right">Geciken</th><th>Oran</th></tr></thead>
+          <tbody>
+            {% for s in stats.services %}
+            <tr>
+              <td><span class="badge" style="background:transparent;padding:0"><i style="width:10px;height:10px;border-radius:3px;display:inline-block" class="seg-{{ s.key }}"></i> {{ s.label }}</span></td>
+              <td class="right">{{ s.total }}</td>
+              <td class="right">{{ s.late }}</td>
+              <td>
+                <div class="meter-cell">
+                  <div class="meter {% if s.pct >= s.threshold_pct %}over{% endif %}" style="flex:1">
+                    <span style="width: {{ s.bar|unlocalize }}%"></span><i style="left: {{ s.marker|unlocalize }}%"></i>
+                  </div>
+                  <span class="val">%{{ s.pct }}</span>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>Hastane × servis ısı haritası</h2><span class="muted small">Gün geneli gecikme %</span></div>
+    <div class="card-body flush">
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr><th>Hastane</th>{% for s in stats.services %}<th class="right">{{ s.label }}</th>{% endfor %}</tr>
+          </thead>
+          <tbody>
+            {% for h in stats.hospitals %}
+            <tr>
+              <td><strong>{{ h.name }}</strong><div class="muted small">{{ h.patients }} hasta · {{ h.requests }} talep</div></td>
+              {% for c in h.cells %}<td class="heat {% if c.breached %}hot{% else %}ok{% endif %}">%{{ c.pct }}</td>{% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="grid split">
+  <div class="card">
+    <div class="card-head">
+      <h2>Saatlik talep dağılımı</h2>
+      <div class="legend">{% for s in stats.services %}<span><i class="seg-{{ s.key }}"></i>{{ s.label }}</span>{% endfor %}</div>
+    </div>
+    <div class="card-body">
+      <div class="chart">
+        {% for h in stats.hourly %}
+        <div class="chart-col" title="{{ h.hour }}:00 — {{ h.total }} talep">
+          <div class="chart-stack">
+            {% for seg in h.segments %}<div class="seg-{{ seg.key }}" style="height: {{ seg.height|unlocalize }}%" title="{{ seg.label }}: {{ seg.count }}"></div>{% endfor %}
+          </div>
+          <div class="chart-x">{{ h.hour }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <h2>Son çalıştırmalar</h2>
+      <a class="small" href="{% url 'graph:run_history' %}">Tümü</a>
+    </div>
+    {% include "graph/_run_list.html" with runs=recent_runs show_user=is_panel_admin %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2>Bildirim alıcıları</h2><span class="muted small">Eşik aşıldığında bilgilendirilen yöneticiler</span></div>
+  <div class="card-body">
+    <div class="recipients">
+      {% for h in stats.hospitals %}{% if h.manager %}
+      <div class="recipient">
+        <span class="avatar sm">{{ h.manager.ad_soyad|slice:":1" }}</span>
+        <div>
+          <strong>{{ h.manager.ad_soyad }}</strong>
+          <div class="muted small">{{ h.name }} · {{ h.manager.rol }}</div>
+          <div class="small">{{ h.manager.eposta }}</div>
+        </div>
+      </div>
+      {% endif %}{% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

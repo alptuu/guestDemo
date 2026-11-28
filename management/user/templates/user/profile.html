@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Profilim{% endblock %}
+{% block page_title %}Profilim{% endblock %}
+{% block page_sub %}Hesap bilgileriniz ve son etkinlikleriniz{% endblock %}
+{% block actions %}<a class="btn" href="{% url 'user:password_change' %}">{% include "partials/_icon.html" with name="key" %} Parolayı değiştir</a>{% endblock %}
+
+{% block content %}
+<div class="grid split-rev" style="align-items:start">
+  <div class="card">
+    <div class="card-body" style="text-align:center;border-bottom:1px solid var(--border)">
+      <div class="avatar lg" style="margin:0 auto 12px">{{ request.user.first_name|slice:":1"|default:request.user.username|slice:":1"|upper }}{{ request.user.last_name|slice:":1"|upper }}</div>
+      <h2>{{ request.user.get_full_name|default:request.user.username }}</h2>
+      <div style="margin-top:8px">
+        {% if is_panel_admin %}<span class="badge blue">Yönetici</span>{% else %}<span class="badge">Personel</span>{% endif %}
+      </div>
+    </div>
+    <div class="card-body">
+      <dl class="info-grid" style="margin:0">
+        <dt>Kullanıcı adı</dt><dd>{{ request.user.username }}</dd>
+        <dt>E-posta</dt><dd>{{ request.user.email|default:"—" }}</dd>
+        <dt>Kayıt tarihi</dt><dd>{{ request.user.date_joined|date:"d.m.Y" }}</dd>
+        <dt>Son giriş</dt><dd>{{ request.user.last_login|date:"d.m.Y H:i"|default:"—" }}</dd>
+        <dt>Çalıştırmalar</dt><dd>{{ run_count }}</dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>Son çalıştırmalarım</h2><a class="small" href="{% url 'graph:run_history' %}">Tümü</a></div>
+    {% include "graph/_run_list.html" with runs=recent_runs %}
+  </div>
+</div>
+{% endblock %}

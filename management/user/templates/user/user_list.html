@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Kullanıcılar{% endblock %}
+{% block page_title %}Kullanıcılar{% endblock %}
+{% block page_sub %}Panele erişebilen hesaplar ve rolleri{% endblock %}
+{% block actions %}<a class="btn primary" href="{% url 'user:user_create' %}">{% include "partials/_icon.html" with name="plus" %} Yeni kullanıcı</a>{% endblock %}
+
+{% block content %}
+<div class="grid cols-3">
+  <div class="card kpi"><div class="kpi-icon">{% include "partials/_icon.html" with name="users" %}</div><div><div class="kpi-label">Toplam kullanıcı</div><div class="kpi-value">{{ total_users }}</div></div></div>
+  <div class="card kpi"><div class="kpi-icon green">{% include "partials/_icon.html" with name="shield" %}</div><div><div class="kpi-label">Yönetici</div><div class="kpi-value">{{ admin_count }}</div></div></div>
+  <div class="card kpi"><div class="kpi-icon amber">{% include "partials/_icon.html" with name="user" %}</div><div><div class="kpi-label">Personel</div><div class="kpi-value">{{ personnel_count }}</div></div></div>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <form class="filters" method="get">
+      <input class="form-control" type="search" name="q" value="{{ query }}" placeholder="Ad, kullanıcı adı veya e-posta ara…">
+      <select class="form-control" name="role">
+        <option value="">Tüm roller</option>
+        {% for value, text in role_choices %}<option value="{{ value }}" {% if value == role %}selected{% endif %}>{% if value == "admin" %}Yönetici{% else %}Personel{% endif %}</option>{% endfor %}
+      </select>
+      <button class="btn" type="submit">Filtrele</button>
+      {% if query or role %}<a class="btn" href="{% url 'user:user_list' %}">Temizle</a>{% endif %}
+    </form>
+  </div>
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>Kullanıcı</th><th>E-posta</th><th>Rol</th><th>Durum</th><th>Son giriş</th><th></th></tr></thead>
+      <tbody>
+        {% for u in page %}
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span class="avatar sm">{{ u.first_name|slice:":1"|default:u.username|slice:":1"|upper }}{{ u.last_name|slice:":1"|upper }}</span>
+              <div><strong>{{ u.get_full_name|default:u.username }}</strong><div class="muted small">@{{ u.username }}</div></div>
+            </div>
+          </td>
+          <td>{{ u.email|default:"—" }}</td>
+          <td>{% if u.is_superuser or u.profile.is_admin %}<span class="badge blue">Yönetici</span>{% else %}<span class="badge">Personel</span>{% endif %}</td>
+          <td>{% if u.is_active %}<span class="badge green dot">Aktif</span>{% else %}<span class="badge red dot">Pasif</span>{% endif %}</td>
+          <td class="nowrap">{{ u.last_login|date:"d.m.Y H:i"|default:"—" }}</td>
+          <td class="right nowrap">
+            <a class="btn sm" href="{% url 'user:user_edit' u.pk %}">{% include "partials/_icon.html" with name="edit" %} Düzenle</a>
+            <a class="btn sm" href="{% url 'user:user_set_password' u.pk %}">{% include "partials/_icon.html" with name="key" %} Parola</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6"><div class="empty">{% include "partials/_icon.html" with name="users" %}<div>Kullanıcı bulunamadı.</div></div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "partials/_pagination.html" %}
+</div>
+{% endblock %}

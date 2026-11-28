@@ -1,0 +1,16 @@
+{# pipeline: [{node, label, state}] — fetch → calc → route → (notify | stop) #}
+<div class="pipeline">
+  {% for n in pipeline %}{% if n.node == "fetch" or n.node == "calc" or n.node == "route" %}
+  <div class="pnode {{ n.state }} {% if n.node == 'route' %}is-route{% endif %}" style="--i: {{ forloop.counter0 }}">
+    {{ n.label }}<small>{{ n.node }}</small>
+  </div>
+  <span class="parrow"></span>
+  {% endif %}{% endfor %}
+  <div class="pbranch">
+    {% for n in pipeline %}{% if n.node == "notify" or n.node == "stop" %}
+    <div class="pnode {{ n.state }} is-{{ n.node }}" style="--i: {{ forloop.counter0 }}">
+      {{ n.label }}<small>{{ n.node }}</small>
+    </div>
+    {% endif %}{% endfor %}
+  </div>
+</div>

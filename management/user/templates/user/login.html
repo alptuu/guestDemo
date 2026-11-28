@@ -1,0 +1,14 @@
+{% extends "base_auth.html" %}
+{% block title %}Giriş{% endblock %}
+{% block content %}
+<h1>Hoş geldiniz</h1>
+<p class="muted" style="margin-bottom:24px">Devam etmek için hesabınızla giriş yapın.</p>
+<form method="post" novalidate>
+  {% csrf_token %}
+  {% if form.errors %}<div class="form-error-box">Kullanıcı adı veya parola hatalı.</div>{% endif %}
+  <div class="form-row"><label for="{{ form.username.id_for_label }}">Kullanıcı adı</label>{{ form.username }}</div>
+  <div class="form-row"><label for="{{ form.password.id_for_label }}">Parola</label>{{ form.password }}</div>
+  <input type="hidden" name="next" value="{{ next }}">
+  <button class="btn primary block" type="submit" style="margin-top:6px">Giriş yap</button>
+</form>
+{% endblock %}

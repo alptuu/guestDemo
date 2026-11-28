@@ -1,0 +1,19 @@
+{% load l10n %}
+{% if runs %}
+<ul class="list">
+  {% for run in runs %}
+  <li>
+    <div>
+      <a href="{% url 'graph:run_detail' run.pk %}"><strong>{{ run.service_label }}</strong></a>
+      <div class="muted small">
+        #{{ run.pk }} · {{ run.created_at|date:"d.m.Y H:i" }}{% if show_user and run.user %} · {{ run.user.username }}{% endif %}
+        {% if run.status == "success" %}· {{ run.duration_ms|floatformat:1 }} ms{% endif %}
+      </div>
+    </div>
+    {% include "graph/_decision_badge.html" %}
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<div class="empty">{% include "partials/_icon.html" with name="history" %}<div>Henüz çalıştırma yok.</div></div>
+{% endif %}

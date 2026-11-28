@@ -1,0 +1,3 @@
+{% if run.status == "error" %}<span class="badge red dot">Hata</span>
+{% elif run.decision == "notify" %}<span class="badge red dot">Yönetici bilgilendirildi</span>
+{% else %}<span class="badge green dot">Takip durduruldu</span>{% endif %}

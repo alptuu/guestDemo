@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Çalıştırma Geçmişi{% endblock %}
+{% block page_title %}Çalıştırma Geçmişi{% endblock %}
+{% block page_sub %}{% if is_panel_admin %}Tüm kullanıcıların graph çalıştırmaları{% else %}Sizin yaptığınız graph çalıştırmaları{% endif %}{% endblock %}
+{% block actions %}<a class="btn primary" href="{% url 'graph:runner' %}">{% include "partials/_icon.html" with name="play" %} Yeni çalıştırma</a>{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-head">
+    <form class="filters" method="get">
+      <select class="form-control" name="service">
+        <option value="">Tüm servisler</option>
+        {% for s in service_choices %}<option value="{{ s.key }}" {% if s.key == service %}selected{% endif %}>{{ s.label }}</option>{% endfor %}
+      </select>
+      <select class="form-control" name="decision">
+        <option value="">Tüm kararlar</option>
+        {% for value, text in decision_choices %}<option value="{{ value }}" {% if value == decision %}selected{% endif %}>{{ text }}</option>{% endfor %}
+      </select>
+      <select class="form-control" name="status">
+        <option value="">Tüm durumlar</option>
+        {% for value, text in status_choices %}<option value="{{ value }}" {% if value == status %}selected{% endif %}>{{ text }}</option>{% endfor %}
+      </select>
+      <button class="btn" type="submit">Filtrele</button>
+      {% if service or decision or status %}<a class="btn" href="{% url 'graph:run_history' %}">Temizle</a>{% endif %}
+    </form>
+    <span class="muted small">{{ page.paginator.count }} kayıt</span>
+  </div>
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr><th>#</th><th>Servis</th><th>Karar</th><th class="right">Eşiği aşan kat</th><th class="right">Bildirilen hasta</th><th class="right">Süre</th>{% if is_panel_admin %}<th>Çalıştıran</th>{% endif %}<th>Zaman</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for run in page %}
+        <tr>
+          <td class="muted">{{ run.pk }}</td>
+          <td><strong>{{ run.service_label }}</strong></td>
+          <td>{% include "graph/_decision_badge.html" %}</td>
+          <td class="right">{{ run.breached_floors }}</td>
+          <td class="right">{{ run.notified_count }}</td>
+          <td class="right nowrap">{% if run.status == "success" %}{{ run.duration_ms|floatformat:1 }} ms{% else %}—{% endif %}</td>
+          {% if is_panel_admin %}<td>{{ run.user.username|default:"—" }}</td>{% endif %}
+          <td class="nowrap">{{ run.created_at|date:"d.m.Y H:i:s" }}</td>
+          <td class="right"><a class="btn sm" href="{% url 'graph:run_detail' run.pk %}">Ayrıntı</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="9"><div class="empty">{% include "partials/_icon.html" with name="history" %}<div>Kayıt bulunamadı.</div></div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "partials/_pagination.html" %}
+</div>
+{% endblock %}

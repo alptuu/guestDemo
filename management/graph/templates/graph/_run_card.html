@@ -1,0 +1,170 @@
+{% load l10n graph_extras %}
+{% for run in runs %}
+{% with p=run.payload %}
+<section class="card run-card {% if animate %}animate{% endif %}" id="run-{{ run.pk }}">
+  <header class="run-head">
+    <div>
+      <div class="run-title">
+        {{ run.service_label }}
+        {% include "graph/_decision_badge.html" %}
+      </div>
+      <div class="muted small" style="margin-top:4px">
+        #{{ run.pk }} · {{ run.created_at|date:"d.m.Y H:i:s" }}
+        {% if run.user %}· {{ run.user.get_full_name|default:run.user.username }}{% endif %}
+        {% if run.status == "success" %}· {{ run.duration_ms|floatformat:1 }} ms{% endif %}
+      </div>
+    </div>
+    {% if not hide_link %}<a class="btn sm" href="{% url 'graph:run_detail' run.pk %}">Ayrıntı</a>{% endif %}
+  </header>
+
+  {% if run.status == "error" %}
+  <div class="error-box">
+    <strong>Graph çalıştırılırken hata oluştu.</strong>
+    <pre>{{ run.error }}</pre>
+  </div>
+  {% else %}
+  <div class="run-section">
+    <div class="section-title">Graph akışı</div>
+    {% include "graph/_pipeline.html" with pipeline=p.pipeline %}
+  </div>
+
+  <div class="run-section run-after" style="--after: {{ p.steps|length }}">
+    <div class="mini-kpis">
+      <div class="mini-kpi"><span>İncelenen talep</span><strong>{{ p.kpis.total_requests }}</strong></div>
+      <div class="mini-kpi"><span>Geciken talep</span><strong>{{ p.kpis.late_requests }}</strong></div>
+      <div class="mini-kpi {% if p.kpis.breached_floors %}alert{% endif %}"><span>Eşiği aşan kat (%{{ p.threshold_pct|floatformat:"-2" }})</span><strong>{{ p.kpis.breached_floors }} / {{ p.kpis.floors }}</strong></div>
+      <div class="mini-kpi"><span>Bildirilen hasta</span><strong>{{ p.kpis.notified_patients }}</strong></div>
+      <div class="mini-kpi"><span>Diyabetik hasta</span><strong>{{ p.kpis.diabetic_patients }}</strong></div>
+    </div>
+  </div>
+
+  <div class="run-section">
+    <div class="section-title">Ajan adımları</div>
+    <ol class="timeline">
+      {% for s in p.steps %}
+      <li class="tl-item {{ s.node }}" style="--i: {{ forloop.counter0 }}">
+        <span class="tl-dot">{{ forloop.counter }}</span>
+        <div class="tl-body">
+          <div class="tl-head">
+            <strong>{{ s.label }}</strong>
+            <code class="node-id">{{ s.node }}</code>
+            {% if s.duration_ms is not None %}<span class="muted small">{{ s.duration_ms|floatformat:1 }} ms</span>{% endif %}
+          </div>
+          <p class="muted">{{ s.description }}</p>
+          <div class="facts">
+            {% for fact in s.facts %}<div class="fact"><span>{{ fact.0 }}</span><strong>{{ fact.1 }}</strong></div>{% endfor %}
+          </div>
+          {% if s.log %}
+          <details>
+            <summary>Konsol çıktısı ({{ s.log|length }} satır)</summary>
+            <pre class="console">{% for line in s.log %}{{ line }}
+{% endfor %}</pre>
+          </details>
+          {% endif %}
+          <details>
+            <summary>State güncellemesi (JSON)</summary>
+            <pre class="console">{{ s.delta|pretty_json }}</pre>
+          </details>
+        </div>
+      </li>
+      {% endfor %}
+    </ol>
+  </div>
+
+  <div class="run-section run-after" style="--after: {{ p.steps|length }}">
+    <div class="section-title">Hastane / kat bazlı gecikme oranı</div>
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Hastane</th><th>Kat</th><th class="right">Talep</th><th class="right">Geciken</th><th>Gecikme oranı</th><th>Durum</th></tr></thead>
+        <tbody>
+          {% for f in p.floors %}
+          <tr class="{% if f.breached %}row-alert{% endif %}">
+            <td>{{ f.hastane_adi }}</td>
+            <td>{{ f.kat }}</td>
+            <td class="right">{{ f.total }}</td>
+            <td class="right">{{ f.late }}</td>
+            <td>
+              <div class="meter-cell">
+                <div class="meter {% if f.breached %}over{% endif %}" style="flex:1">
+                  <span style="width: {{ f.bar|unlocalize }}%"></span><i style="left: {{ p.threshold_marker|unlocalize }}%"></i>
+                </div>
+                <span class="val">%{{ f.pct|floatformat:"-1" }}</span>
+              </div>
+            </td>
+            <td>{% if f.breached %}<span class="badge red">Eşik aşıldı</span>{% else %}<span class="badge green">Normal</span>{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="muted small" style="margin-top:8px">Dikey çizgi gecikme eşiğini (%{{ p.threshold_pct|floatformat:"-2" }}) gösterir.</p>
+  </div>
+
+  {% if p.decision == "notify" %}
+  <div class="run-section run-after" style="--after: {{ p.steps|length }}">
+    <div class="section-title">Bilgilendirilen yöneticiler</div>
+    <div class="recipients">
+      {% for r in p.recipients %}
+      <div class="recipient">
+        <span class="avatar sm">{{ r.ad_soyad|slice:":1" }}</span>
+        <div>
+          <strong>{{ r.ad_soyad }}</strong>
+          <div class="muted small">{{ r.rol }}</div>
+          <div class="small">{{ r.eposta }} · {{ r.telefon }}</div>
+        </div>
+      </div>
+      {% empty %}<span class="muted">Alıcı bulunamadı.</span>{% endfor %}
+    </div>
+  </div>
+
+  <div class="run-section run-after" style="--after: {{ p.steps|length }}">
+    <div class="section-title">Bildirime konu olan hastalar ({{ p.notified|length }})</div>
+    <div class="table-scroll" style="border:1px solid var(--border);border-radius:10px">
+      <table class="table">
+        <thead><tr><th>Hastane</th><th>Kat</th><th>Oda</th><th>Hasta</th><th>Diyabetik</th><th class="right">Geciken talep</th><th>Talepler</th><th class="right">En uzun bekleme</th></tr></thead>
+        <tbody>
+          {% for n in p.notified %}
+          <tr class="{% if n.diyabetik %}row-diabetic{% endif %}">
+            <td>{{ n.hastane_adi }}</td>
+            <td>{{ n.kat }}</td>
+            <td>{{ n.oda_no }}</td>
+            <td class="mono">{{ n.hasta_id }}</td>
+            <td>{% if n.diyabetik %}<span class="badge amber">Diyabetik</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+            <td class="right">{{ n.late_requests }}</td>
+            <td>{{ n.details }}</td>
+            <td class="right nowrap">{% if n.max_wait is not None %}{{ n.max_wait|floatformat:"-1" }} dk{% else %}—{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="run-section run-after" style="--after: {{ p.steps|length }}">
+    <div class="section-title">Takibi kapatılan hastalar ({{ p.stopped|length }})</div>
+    {% if p.stopped %}
+    <details open>
+      <summary>Listeyi göster / gizle</summary>
+      <div class="table-scroll" style="border:1px solid var(--border);border-radius:10px;margin-top:8px">
+        <table class="table">
+          <thead><tr><th>Hastane</th><th>Kat</th><th>Oda</th><th>Hasta</th><th class="right">Geciken talep</th><th>Talepler</th></tr></thead>
+          <tbody>
+            {% for n in p.stopped %}
+            <tr>
+              <td>{{ n.hastane_adi }}</td><td>{{ n.kat }}</td><td>{{ n.oda_no }}</td>
+              <td class="mono">{{ n.hasta_id }}</td><td class="right">{{ n.late_requests }}</td><td>{{ n.details }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </details>
+    {% else %}
+    <p class="muted">Geciken talep bulunmadığı için kapatılacak takip yok.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+  {% endif %}
+</section>
+{% endwith %}
+{% endfor %}

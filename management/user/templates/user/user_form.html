@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block page_sub %}{% if is_password %}Kullanıcı için yeni bir parola belirleyin{% else %}Hesap bilgileri ve rol ataması{% endif %}{% endblock %}
+{% block actions %}<a class="btn" href="{% url 'user:user_list' %}">Listeye dön</a>{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width:620px">
+  <form method="post" class="card-body" novalidate>
+    {% csrf_token %}
+    {% include "partials/_form.html" %}
+    <div style="display:flex;gap:10px">
+      <button class="btn primary" type="submit">Kaydet</button>
+      <a class="btn" href="{% url 'user:user_list' %}">Vazgeç</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

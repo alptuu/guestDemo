@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Graph Çalıştır{% endblock %}
+{% block page_title %}Graph Çalıştır{% endblock %}
+{% block page_sub %}Ajan akışını seçilen servisler için çalıştırın ve adımlarını izleyin{% endblock %}
+
+{% block content %}
+<div class="grid split-rev" style="align-items:start">
+  <div class="stack">
+    <form class="card" id="run-form" method="post" action="{% url 'graph:execute' %}">
+      {% csrf_token %}
+      <div class="card-head"><h2>Çalıştırma ayarları</h2></div>
+      <div class="card-body">
+        <div class="picker">
+          {% for s in service_choices %}
+          <label class="pick">
+            <input type="checkbox" name="service" value="{{ s.key }}" checked>
+            <span class="pick-box">
+              <i class="pick-dot seg-{{ s.key }}"></i>
+              <span>
+                <strong>{{ s.label }}</strong>
+                <span class="muted small">{{ s.talep_turu }} · {{ s.rows }} talep · eşik %{{ s.threshold_pct|floatformat:"-2" }}</span>
+              </span>
+              <span class="pick-check">{% include "partials/_icon.html" with name="check" %}</span>
+            </span>
+          </label>
+          {% endfor %}
+        </div>
+        <p class="muted small" style="margin:14px 0">Her servis türü için graph ayrı ayrı çağrılır; sonuçlar çalıştırma geçmişine kaydedilir.</p>
+        <button class="btn primary block" type="submit" id="run-btn">
+          <span class="spinner"></span>
+          {% include "partials/_icon.html" with name="play" %}
+          <span data-label>Graph’ı çalıştır</span>
+        </button>
+        <div class="field-error" id="run-error" hidden style="margin-top:10px"></div>
+      </div>
+    </form>
+
+    <div class="card">
+      <div class="card-head"><h2>Graph akışı</h2></div>
+      <div class="card-body">
+        {% include "graph/_pipeline.html" with pipeline=blueprint %}
+        <div class="flow-list" style="margin-top:18px">
+          {% for n in blueprint %}
+          <div class="flow-item"><span class="num">{{ forloop.counter }}</span><div><strong>{{ n.label }} <code class="node-id">{{ n.node }}</code></strong><span class="muted">{{ n.description }}</span></div></div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>Son çalıştırmalar</h2><a class="small" href="{% url 'graph:run_history' %}">Tümü</a></div>
+      {% include "graph/_run_list.html" with runs=recent_runs show_user=is_panel_admin %}
+    </div>
+  </div>
+
+  <div class="stack" id="results">
+    <div class="card" id="results-placeholder">
+      <div class="empty">
+        {% include "partials/_icon.html" with name="cpu" %}
+        <div><strong>Henüz bir çalıştırma yok</strong></div>
+        <div>Soldan servis türlerini seçip “Graph’ı çalıştır”a basın. Ajan adımları, konsol çıktıları ve sonuçlar burada görünür.</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}<script src="{% static 'graph/runner.js' %}"></script>{% endblock %}
